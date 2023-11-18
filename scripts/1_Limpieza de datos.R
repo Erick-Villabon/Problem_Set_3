@@ -1,13 +1,13 @@
 #_____________________________________________________________________________#
 #                                                                             #
-#                      Problem Set 3: Making Money with ML?                   #
+#                      Problem Set 3: Predicting Poverty                      #
 #                                                                             #
 #_____________________________________________________________________________#
 
 #   Autores: - Erick Villabon                                                  
 #            - Juan Diego Duarte
 #
-#  Fecha: 30/10/2023 
+#  Fecha: 04/12/2023 
 
 
 #___________________________________________________________
@@ -46,13 +46,6 @@ test_h <- read.csv("test_hogares.csv")
 
 sample <- read.csv("sample_submission.csv") 
 
-# 2. Unión de las bases 
-
-
-
-
-#revisamos los NAs
-sapply(test_p,function(x) sum(is.na(x)))
-
-
+#no guardar en github el que dice train_personas.csv
+####################################################
 
