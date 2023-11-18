@@ -37,12 +37,22 @@ list.files()
 
 # 1. Importar los Datos
 
-train_p <- read.csv("") 
+unzip("train_personas.csv.zip")
+train_p <- read.csv("train_personas.csv") 
+train_h <- read.csv("train_hogares.csv")
+
+test_p <- read.csv("test_personas.csv")
+test_h <- read.csv("test_hogares.csv")
+
+sample <- read.csv("sample_submission.csv") 
+
+# 2. Unión de las bases 
+
 
 
 
 #revisamos los NAs
-sapply(test,function(x) sum(is.na(x)))
+sapply(test_p,function(x) sum(is.na(x)))
 
 
 
