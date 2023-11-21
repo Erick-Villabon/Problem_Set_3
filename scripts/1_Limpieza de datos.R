@@ -37,7 +37,7 @@ list.files()
 
 # 1. Importar los Datos
 
-unzip("train_personas.csv.zip")
+#unzip("train_personas.csv.zip")
 train_p <- read.csv("train_personas.csv") 
 train_h <- read.csv("train_hogares.csv")
 
