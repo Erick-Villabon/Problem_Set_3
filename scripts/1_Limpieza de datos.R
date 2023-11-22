@@ -46,6 +46,44 @@ test_h <- read.csv("test_hogares.csv")
 
 sample <- read.csv("sample_submission.csv") 
 
+##3. limpieza hogares TEST 
+
+test_h$P5100 <- with(test_h, ifelse(is.na(P5100),0,P5100))
+
+test_h$arriendo <- test_h$P5130
+test_h$arriendo <- with(test_h, ifelse(is.na(arriendo),P5140,arriendo))
+
+test_h$hipoteca <- 0
+test_h$hipoteca <- with(test_h, ifelse(P5100!=0,1,hipoteca))
+
+##2.1 Limpieza personas TEST
+
+colSums(is.na(test_p))
+test_p$Oc <- with(test_p, ifelse(is.na(Oc) & ((Des==1)|(Ina==1)),0,Oc))
+test_p$Des <- with(test_p, ifelse(is.na(Des) & ((Oc==1)|(Ina==1)),0,Des))
+test_p$Ina <- with(test_p, ifelse(is.na(Ina) & ((Oc==1)|(Des==1)),0,Ina))
+colSums(is.na(test_p))
+
+colSums(is.na(test_p))
+test_p$P6090 <- with(test_p, ifelse(is.na(P6090) & ((P6100==1)|(P6100==2)|(P6100==3)),1,P6090))
+test_p$P6090 <- with(test_p, ifelse(is.na(P6090) & (P6100==9),9,P6090))
+
+test_p$P6100 <- with(test_p, ifelse(is.na(P6100) & (P6090==2),0,P6100))
+test_p$P6100 <- with(test_p, ifelse(is.na(P6100) & (P6090==9),9,P6100))
+colSums(is.na(test_p))
+
+colSums(is.na(test_p))
+test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==9),99,P6210s1))
+test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==1),0,P6210s1))
+test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==2),2,P6210s1))
+test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==3),7,P6210s1))
+test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==4),11,P6210s1))
+test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==5),13,P6210s1))
+test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==6),18,P6210s1))
+colSums(is.na(test_p))
+
+
+
 #no guardar en github el que dice train_personas.csv
 ####################################################
 
