@@ -28,8 +28,8 @@ p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, ope
        units, randomForest, rattle, spatialsample)
 
 # - Actualizar espacio de trabajo 
-setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
-#setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
+#setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
+setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
 
 getwd()
 list.files()
@@ -46,65 +46,89 @@ test_h <- read.csv("test_hogares.csv")
 
 sample <- read.csv("sample_submission.csv") 
 
-##3. limpieza hogares TEST 
-
-test_h$P5100 <- with(test_h, ifelse(is.na(P5100),0,P5100))
-
-test_h$arriendo <- test_h$P5130
-test_h$arriendo <- with(test_h, ifelse(is.na(arriendo),P5140,arriendo))
-
-test_h$hipoteca <- 0
-test_h$hipoteca <- with(test_h, ifelse(P5100!=0,1,hipoteca))
-
-##2.1 Limpieza personas TEST
-
-colSums(is.na(test_p))
-test_p$Oc <- with(test_p, ifelse(is.na(Oc) & ((Des==1)|(Ina==1)),0,Oc))
-test_p$Des <- with(test_p, ifelse(is.na(Des) & ((Oc==1)|(Ina==1)),0,Des))
-test_p$Ina <- with(test_p, ifelse(is.na(Ina) & ((Oc==1)|(Des==1)),0,Ina))
-colSums(is.na(test_p))
-
-colSums(is.na(test_p))
-test_p$P6090 <- with(test_p, ifelse(is.na(P6090) & ((P6100==1)|(P6100==2)|(P6100==3)),1,P6090))
-test_p$P6090 <- with(test_p, ifelse(is.na(P6090) & (P6100==9),9,P6090))
-
-test_p$P6100 <- with(test_p, ifelse(is.na(P6100) & (P6090==2),0,P6100))
-test_p$P6100 <- with(test_p, ifelse(is.na(P6100) & (P6090==9),9,P6100))
-colSums(is.na(test_p))
-
-colSums(is.na(test_p))
-test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==9),99,P6210s1))
-test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==1),0,P6210s1))
-test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==2),2,P6210s1))
-test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==3),7,P6210s1))
-test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==4),11,P6210s1))
-test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==5),13,P6210s1))
-test_p$P6210s1 <- with(test_p, ifelse(is.na(P6210s1) & (P6210==6),18,P6210s1))
-colSums(is.na(test_p))
 
 
+# 1.1 Datos que hacen falta
 
-#no guardar en github el que dice train_personas.csv
-####################################################
+test_h$Pobre <- NA
+test_h$Ingtot <- NA
+test_h$Ingtotug <- NA
 
-#2. Limpieza de la base
+#Indicador de base
+test_h <- test_h %>%
+  mutate(base_i = c(0))
 
+test_p <- test_p %>%
+  mutate(base_i = c(1))
+
+train_h <- train_h %>%
+  mutate(base_i = c(2))
+
+train_p <- train_p %>%
+  mutate(base_i = c(3))
+
+# 1.4 unir bases
 train <- left_join(train_p,train_h)
 test <- left_join(test_p,test_h)
 
-test$Pobre <- NA
-test$Ingtot <- NA
-test$Ingtotug <- NA
 
-  #2.1 Limpieza de train
 
-objetos <- c("train", "test")
+# 1.2 Renombrar variables
 
-for (obj in objetos) {
+bases <- c("test", "train")
+
+for (bas in bases) {
   
-  data <- get(obj)
+  data <- get(bas)
+
+
+  data <- data %>%
+  rename(cuartos = P5000)
+
+  data <- data %>%
+  rename(cuartosxpersonas = P5010)
+
+  data <- data %>%
+  rename(vivienda_ocupada = P5090)
+
+  data <- data %>%
+  rename(amortizacion = P5100)
+  data$amortizacion <- with(data, ifelse(amortizacion!=0,1,amortizacion))
   
-  # - 3.1 Train
+  data <- data %>%
+  rename(arriendo1 = P5130)
+
+  data <- data %>%
+  rename(arriendo2 = P5140)
+  
+  data$arriendo1 <- with(data, ifelse(is.na(arriendo1),arriendo2,arriendo1))
+
+  colSums(is.na(data))
+  data$Oc <- with(data, ifelse(is.na(Oc) & ((Des==1)|(Ina==1)),0,Oc))
+  data$Des <- with(data, ifelse(is.na(Des) & ((Oc==1)|(Ina==1)),0,Des))
+  data$Ina <- with(data, ifelse(is.na(Ina) & ((Oc==1)|(Des==1)),0,Ina))
+  colSums(is.na(data))
+  
+  
+  
+  colSums(is.na(data))
+  data$P6090 <- with(data, ifelse(is.na(P6090) & ((P6100==1)|(P6100==2)|(P6100==3)),1,P6090))
+  data$P6090 <- with(data, ifelse(is.na(P6090) & (P6100==9),9,P6090))
+  
+  data$P6100 <- with(data, ifelse(is.na(P6100) & (P6090==2),0,P6100))
+  data$P6100 <- with(data, ifelse(is.na(P6100) & (P6090==9),9,P6100))
+  colSums(is.na(data))
+  
+  colSums(is.na(data))
+  data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==9),99,P6210s1))
+  data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==1),0,P6210s1))
+  data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==2),2,P6210s1))
+  data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==3),7,P6210s1))
+  data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==4),11,P6210s1))
+  data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==5),13,P6210s1))
+  data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==6),18,P6210s1))
+  colSums(is.na(data))
+  
   
   # - Edad
   
@@ -151,16 +175,67 @@ for (obj in objetos) {
   # - Experiencia trabajo actual
   
   data <- rename(data, c("exp_trab_actual" = "P6426"))
-
+  
   # - Ciudad
   
   data <- rename(data, c("ciudad" = "Dominio"))
   
-  assign(obj, data)
+  # - Imputación de experiencia
+  
+  data$exp_trab_actual <- ifelse(data$edad < 18 & 
+                                   is.na(data$exp_trab_actual), 0, 
+                                 data$exp_trab_actual)
+  
+  data <- data %>% 
+    group_by(id) %>% 
+    mutate(mean_exp = mean(exp_trab_actual, na.rm = TRUE)) %>% 
+    ungroup() %>% 
+    mutate(exp_trab_actual = if_else(is.na(exp_trab_actual) & data$edad >= 18, 
+                                     mean_exp, data$exp_trab_actual))
+  
+  data <- data %>% 
+    group_by(id) %>% 
+    mutate(variable = ifelse(all(is.na(exp_trab_actual)), 0, 
+                             exp_trab_actual)) %>% 
+    ungroup() %>% 
+    mutate(exp_trab_actual = if_else(is.na(exp_trab_actual), 
+                                     variable, data$exp_trab_actual))
+  
+  
+  data <- subset(data, select = c("id", "Orden", "Clase",
+                                  "ciudad", "edad", "edad_2", "mujer", 
+                                  "estudiante", "primaria", "secundaria",
+                                  "media", "superior", "Ingtot",
+                                  "Ingtotug", "exp_trab_actual", 
+                                  "Pobre", "cuartosxpersonas", 
+                                  "vivienda_ocupada",
+                                  "amortizacion", "arriendo1"))
+
+  
+  data$num_menores <- as.numeric(data$edad < 18)
+  
+  
+  
+  data <- data %>% group_by(id) %>%
+    summarize(edad = mean(edad),
+              edad_2 = mean(edad_2),
+              mujer = mean(mujer),
+              estudiante = mean(estudiante),
+              primaria = mean(primaria),
+              secundaria = mean(secundaria),
+              media = mean(media),
+              superior = mean(superior),
+              Ingtot = sum(Ingtot),
+              Ingtotug = mean(Ingtotug),
+              exp_trab_actual = mean(exp_trab_actual),
+              Pobre = mean(Pobre),
+              cuartosxpersonas = mean(cuartosxpersonas),
+              num_menores = sum(num_menores),
+              ciudad = first(ciudad), 
+              amortizacion = sum(amortizacion),
+              arriendo1 = mean(arriendo1))
+  
+  assign(bas, data)
   rm(data)
   
-}
-
-
-
-
+  }
