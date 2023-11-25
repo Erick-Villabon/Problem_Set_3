@@ -4,6 +4,7 @@
 #
 #___________________________________________________________
 #___________________________________________________________
+
 # - Limpiar espacio de trabajo
 
 rm(list = ls())
@@ -39,36 +40,5 @@ list.files()
 ##________________________________________________________________________
 
 #Modelo 1
-
-rec_1 <- recipe(price ~ surface_total + bathrooms + bedrooms + property_type + 
-                  distancia_universidades + distancia_bus  + distancia_policia + 
-                  distancia_concesionarios + distancia_parque + estrato, data = db)%>% 
-  step_dummy(all_nominal_predictors())
-
-reglineal<-linear_reg()
-
-
-workf_1<-workflow() %>% 
-  add_recipe(rec_1) %>% 
-  add_model(reglineal)
-
-
-fit_1 <- workf_1 %>% 
-  fit(data=train) 
-
-
-y1 <- predict(fit_1, new_data = test) %>% 
-  bind_cols(test) 
-
-y1<- y1 %>%
-  select(property_id, .pred)
-
-colnames(y1)[".pred"] <- "price"
-
-y1$price <- y1$.pred
-
-y1 <- y1[, -which(names(y1) == ".pred")]
-
-write.table(y1, file = "ML_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
