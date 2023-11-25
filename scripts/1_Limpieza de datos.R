@@ -82,10 +82,30 @@ for (bas in bases) {
   data <- get(bas)
   
   data <- rename(data, c("cuartos" = "P5000"))
-  data <- rename(data, c("cuartosxpersonas" = "P5010"))
+  data <- rename(data, c("cuartosdormir" = "P5010"))
   data <- rename(data, c("vivienda_ocupada" = "P5090"))
   data <- rename(data, c("amortizacion" = "P5100"))
+  data <- rename(data, c("lineapobreza" = "Lp"))
+  
+  data$cuartosxpersonas <- data$cuartosdormir/data$Nper
+  
+  data$casapropia <- 0
+  data$casapropia <- with(data, ifelse(vivienda_ocupada==1,1,casapropia))
 
+  data$casahipoteca <- 0
+  data$casahipoteca <- with(data, ifelse(vivienda_ocupada==2,1,casahipoteca))
+  
+  data$casaarriendo <- 0
+  data$casaarriendo <- with(data, ifelse(vivienda_ocupada==3,1,casaarriendo))
+  
+  data$casausufructo <- 0
+  data$casausufructo <- with(data, ifelse(vivienda_ocupada==4,1,casausufructo))
+  
+  data$casasintitulo <- 0
+  data$casasintitulo <- with(data, ifelse((vivienda_ocupada==5)|(vivienda_ocupada==6),1,casasintitulo))
+  
+  
+  
   data$amortizacion <- with(data, ifelse(is.na(amortizacion),0,amortizacion))
   data$amortizacion_2 <- NA
   data$amortizacion_2 <- ifelse(data$amortizacion != 0, 1, 0)
@@ -102,22 +122,18 @@ for (bas in bases) {
   data$pagoarriendo <- with(data, ifelse(arriendo2 != 0,1,pagoarriendo))
   data$pagoarriendo <- with(data, ifelse(arriendo2 == 0,0,pagoarriendo))
   
-
-  colSums(is.na(data))
-  data$Oc <- with(data, ifelse(is.na(Oc) & ((Des==1)|(Ina==1)),0,Oc))
-  data$Des <- with(data, ifelse(is.na(Des) & ((Oc==1)|(Ina==1)),0,Des))
-  data$Ina <- with(data, ifelse(is.na(Ina) & ((Oc==1)|(Des==1)),0,Ina))
-  colSums(is.na(data))
+  data$Oc <- with(data, ifelse(is.na(Oc),0,Oc))
+  data$Des <- with(data, ifelse(is.na(Des),0,Des))
+  data$Ina <- with(data, ifelse(is.na(Ina),0,Ina))
   
-  colSums(is.na(data))
+  
+  
   data$P6090 <- with(data, ifelse(is.na(P6090) & ((P6100==1)|(P6100==2)|(P6100==3)),1,P6090))
   data$P6090 <- with(data, ifelse(is.na(P6090) & (P6100==9),9,P6090))
   
   data$P6100 <- with(data, ifelse(is.na(P6100) & (P6090==2),0,P6100))
   data$P6100 <- with(data, ifelse(is.na(P6100) & (P6090==9),9,P6100))
-  colSums(is.na(data))
-  
-  colSums(is.na(data))
+
   data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==9),99,P6210s1))
   data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==1),0,P6210s1))
   data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==2),2,P6210s1))
@@ -125,8 +141,7 @@ for (bas in bases) {
   data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==4),11,P6210s1))
   data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==5),13,P6210s1))
   data$P6210s1 <- with(data, ifelse(is.na(P6210s1) & (P6210==6),18,P6210s1))
-  colSums(is.na(data))
-  
+
   
   # - Edad
   
@@ -208,7 +223,9 @@ for (bas in bases) {
                                   "Pobre", "cuartosxpersonas", 
                                   "vivienda_ocupada",
                                   "amortizacion", "arriendo1", "pagoarriendo",
-                                  "amortizacion_2"))
+                                  "amortizacion_2", "lineapobreza", "casapropia",
+                                  "casahipoteca", "casausufructo", "casasintitulo", "casaarriendo",
+                                  "Des", "Ina"))
 
   
   data$num_menores <- as.numeric(data$edad < 18)
@@ -234,7 +251,15 @@ for (bas in bases) {
               amortizacion = mean(amortizacion),
               arriendo1 = mean(arriendo1),
               pagoarriendo= mean(pagoarriendo),
-              amortizacion_2= mean(amortizacion_2))
+              amortizacion_2= mean(amortizacion_2),
+              lineapobreza= mean(lineapobreza),
+              casapropia= mean(casapropia),
+              casahipoteca= mean(casahipoteca),
+              casausufructo= mean(casausufructo),
+              casasintitulo= mean(casasintitulo),
+              casaarriendo= mean(casaarriendo),
+              Des= mean(Des),
+              Ina= mean(Ina))
   
   assign(bas, data)
   rm(data)
