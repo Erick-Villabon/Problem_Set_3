@@ -30,8 +30,9 @@ list.files()
 
 #***** submission_template <- read.csv("submission_template.csv")
 
-db <- rbind(test, train)
 
+train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
+db <- rbind(test, train)
 
 ##________________________________________________________________________
 #
@@ -80,4 +81,167 @@ y1<- y1 %>%
 write.table(y1, file = "ML_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
+
+
+##________________________________________________________________________
+#
+#                      Regularización de Modelos Lineales
+#
+##________________________________________________________________________
+
+
+# encontrar el lambda optimo
+#*****
+#*****
+#*****
+
+train_fold <- vfold_cv(train, v = 30)
+
+# Primera receta
+
+rec_1 <- recipe(Ingtot ~ edad + edad_2 + mujer + estudiante + 
+                  primaria + secundaria  + media + 
+                  superior + exp_trab_actual + cuartosxpersonas + 
+                  num_menores + ciudad + amortizacion + arriendo1 + casapropia +
+                  casahipoteca + casausufructo + casasintitulo + casaarriendo + Des +
+                  Ina, data = db)%>% 
+  step_dummy(all_nominal_predictors()) %>%
+  step_novel(all_nominal_predictors()) %>% 
+  step_zv(all_predictors()) 
+
+
+# Ridge
+ridge_spec <- linear_reg(penalty = tune(), mixture = 1) %>%
+  set_mode("regression") %>%
+  set_engine("glmnet")
+
+# Lasso
+lasso_spec <- linear_reg(penalty = tune(), mixture = 0) %>%
+  set_mode("regression") %>%
+  set_engine("glmnet")
+
+# Elastic Net
+elastic_net_spec <- linear_reg(penalty = tune(), mixture = .5) %>%
+  set_mode("regression") %>%
+  set_engine("glmnet")
+
+
+# Workflows
+workflow_1.1 <- workflow() %>%
+  add_recipe(rec_1) %>%
+  add_model(ridge_spec)
+
+workflow_1.2 <- workflow() %>%
+  add_recipe(rec_1) %>%
+  add_model(lasso_spec)
+
+workflow_1.3 <- workflow() %>%
+  add_recipe(rec_1) %>%
+  add_model(elastic_net_spec)
+
+# Penalización
+
+penalty_grid <- grid_regular(penalty(range = c(-4, 4)), levels = 30)
+penalty_grid
+
+tune_res1 <- tune_grid(
+  workflow_1.1,         
+  resamples = train_fold,  
+  grid = penalty_grid,        
+  metrics = metric_set(rmse)
+)
+
+tune_res2 <- tune_grid(
+  workflow_1.2,         
+  resamples = train_fold,  
+  grid = penalty_grid,        
+  metrics = metric_set(rmse)
+)
+
+tune_res3 <- tune_grid(
+  workflow_1.3,         
+  resamples = train_fold,  
+  grid = penalty_grid,        
+  metrics = metric_set(rmse)
+)
+
+# Seleccionar el mejor valor de penalización
+best_penalty1 <- select_best(tune_res1, metric = "rmse")
+best_penalty2 <- select_best(tune_res2, metric = "rmse")
+best_penalty3 <- select_best(tune_res3, metric = "rmse")
+
+modelo_1.1 <- finalize_workflow(workflow_1.1, best_penalty1)
+modelo_1.2 <- finalize_workflow(workflow_1.2, best_penalty2)
+modelo_1.3 <- finalize_workflow(workflow_1.3, best_penalty3)
+
+# Entrenamos el primer modelo con los datos de train 
+
+fit_1.1 <- fit(modelo_1.1, data = train)
+fit_1.2 <- fit(modelo_1.2, data = train)
+fit_1.3 <- fit(modelo_1.3, data = train)
+
+# Evaluacion del modelo
+
+augment(fit_1.1, new_data = train) %>%
+  mae(truth = Ingtot, estimate = .pred)
+
+augment(fit_1.2, new_data = train) %>%
+  mae(truth = Ingtot, estimate = .pred)
+
+augment(fit_1.3, new_data = train) %>%
+  mae(truth = Ingtot, estimate = .pred)
+
+# Sacamos las predicciones sobre los datos de test 
+
+predictiones_1.1 <- predict(fit_1.1 , new_data = test) %>%
+  bind_cols(test) 
+
+predictiones_1.1<- predictiones_1.1 %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+predictiones_1.1 <- rename(predictiones_1.1, c("ingreso" = ".pred"))
+predictiones_1.1 <- rename(predictiones_1.1, c("pobre" = "Pobre"))
+
+predictiones_1.1$pobre <- ifelse(predictiones_1.1$ingreso > predictiones_1.1$lineapobreza, 0, 1)
+
+predictiones_1.1<- predictiones_1.1 %>%
+  select(id, pobre)
+
+write.table(predictiones_1.1, file = "Ridge_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+
+
+predictiones_1.2 <- predict(fit_1.2 , new_data = test)%>%
+  bind_cols(test) 
+
+predictiones_1.2<- predictiones_1.2 %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+predictiones_1.2 <- rename(predictiones_1.2, c("ingreso" = ".pred"))
+predictiones_1.2 <- rename(predictiones_1.2, c("pobre" = "Pobre"))
+
+predictiones_1.2$pobre <- ifelse(predictiones_1.2$ingreso > predictiones_1.2$lineapobreza, 0, 1)
+
+predictiones_1.2<- predictiones_1.2 %>%
+  select(id, pobre)
+
+write.table(predictiones_1.2, file = "Lasso_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+
+
+predictiones_1.3 <- predict(fit_1.3, new_data = test) %>%
+  bind_cols(test) 
+
+predictiones_1.3<- predictiones_1.3 %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+predictiones_1.3 <- rename(predictiones_1.3, c("ingreso" = ".pred"))
+predictiones_1.3 <- rename(predictiones_1.3, c("pobre" = "Pobre"))
+
+predictiones_1.3$pobre <- ifelse(predictiones_1.3$ingreso > predictiones_1.3$lineapobreza, 0, 1)
+
+predictiones_1.3<- predictiones_1.3 %>%
+  select(id, pobre)
+
+write.table(predictiones_1.3, file = "Elastic_Net_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
