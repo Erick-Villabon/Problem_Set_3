@@ -245,3 +245,199 @@ predictiones_1.3<- predictiones_1.3 %>%
 
 write.table(predictiones_1.3, file = "Elastic_Net_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
+
+
+
+##________________________________________________________________________
+#
+#                                 Arboles
+#
+##________________________________________________________________________
+
+
+
+
+# Tune grid aleatorio para el modelo de árboles
+tune_grid_tree <- grid_random(
+  tree_depth(range = c(1, 10)),
+  min_n(range = c(1, 20)),
+  size = 5
+)
+
+## Modelo de arboles
+tree_spec <- decision_tree(
+  tree_depth = tune(),
+  min_n = tune()
+) %>%
+  set_mode("regression")
+
+# Tune grid aleatorio para el modelo de rf
+rf_grid_random <- grid_random(  mtry(range = c(2, 4)),
+                                min_n(range = c(1, 10)),
+                                trees(range = c(100, 300)), size = 4)
+# Agregar modelos basados en árboles
+# Random Forest
+
+# Modelo de rf
+rf_spec<- rand_forest(
+  mtry = tune(),              
+  min_n = tune(),             
+  trees = tune(),
+) %>%
+  set_engine("randomForest") %>%
+  set_mode("regression")       
+
+# Tune grid aleatorio para el modelo de boost
+tune_grid_boost <- grid_random(
+  trees(range = c(400, 600)),
+  min_n(range = c(1, 3)),
+  learn_rate(range = c(0.001, 0.01)), size = 4
+)
+
+# Especificación del modelo boost_tree en tidymodels
+boost_spec <- boost_tree(
+  trees = tune(),
+  min_n = tune(),
+  learn_rate = tune()
+) %>%
+  set_mode("regression")  
+
+# Primera receta
+rec_1 <- recipe(Ingtot ~ edad + edad_2 + mujer + estudiante + 
+                  primaria + secundaria  + media + 
+                  superior + exp_trab_actual + cuartosxpersonas + 
+                  num_menores + ciudad + amortizacion + arriendo1 + casapropia +
+                  casahipoteca + casausufructo + casasintitulo + casaarriendo + Des +
+                  Ina, data = db)%>% 
+  step_dummy(all_nominal_predictors())
+
+
+#rec_1 <- recipe(price ~ surface_total + bathrooms + bedrooms + property_type + area_universidades + 
+#                  area_comercial + area_parques + distancia_bus  +
+ #                 distancia_bus + distancia_policia + estrato , data = db) %>%
+  #step_interact(terms = ~ estrato:bedrooms+bathrooms:property_type) %>% 
+  #step_novel(all_nominal_predictors()) %>% 
+  #step_dummy(all_nominal_predictors()) %>% 
+  #step_zv(all_predictors()) %>% 
+  #step_normalize(all_predictors())
+
+
+## para el caso de los arboles incorpora no linealidades.
+
+workflow_1.1 <- workflow() %>%
+  add_recipe(rec_1) %>%
+  add_model(tree_spec)
+
+workflow_1.2 <- workflow() %>%
+  add_recipe(rec_1) %>%
+  add_model(rf_spec)
+
+workflow_1.3 <- workflow() %>%
+  add_recipe(rec_1) %>%
+  add_model(boost_spec)  
+
+
+tune_tree <- tune_grid(
+  workflow_1.1, 
+  grid = tune_grid_tree,
+  metrics = metric_set(mae)
+)
+
+
+tune_rf <- tune_grid(
+  workflow_1.2, 
+  grid = rf_grid_random,
+  metrics = metric_set(mae)
+)
+
+
+
+tune_boost <- tune_grid(
+  workflow_1.3, 
+  grid = tune_grid_boost,
+  metrics = metric_set(mae)
+)
+
+# Utilizar 'select_best' para seleccionar el mejor valor.
+best_parms_tree <- select_best(tune_tree, metric = "mae")
+best_parms_tree
+
+# Utilizar 'select_best' para seleccionar el mejor valor.
+best_parms_rf<- select_best(tune_rf, metric = "mae")
+best_parms_rf
+
+# Utilizar 'select_best' para seleccionar el mejor valor.
+best_parms_boost <- select_best(tune_boost, metric = "mae")
+best_parms_boost
+
+# Finalizar el flujo de trabajo 'workflow' con el mejor valor de parametros
+tree_final <- finalize_workflow(workflow_1.1, best_parms_tree)
+
+# Ajustar el modelo  utilizando los datos de entrenamiento
+tree_final_fit <- fit(tree_final, data = test)
+
+
+# Finalizar el flujo de trabajo 'workflow' con el mejor valor de parametros
+rf_final <- finalize_workflow(workflow_1.2, best_parms_rf)
+
+# Ajustar el modelo utilizando los datos de entrenamiento
+rf_final_fit <- fit(rf_final, data = test)
+
+
+# Finalizar el flujo de trabajo 'workflow' con el mejor valor de parametros
+boost_final <- finalize_workflow(workflow_1.3, best_parms_boost)
+
+# Ajustar el modelo  utilizando los datos de entrenamiento
+boost_final_fit <- fit(boost_final, data = test)
+
+
+
+augment(tree_final_fit, new_data = test) %>%
+  mae(truth = price, estimate = .pred)
+
+
+augment(rf_final_fit, new_data = test) %>%
+  mae(truth = price, estimate = .pred)
+
+
+augment(boost_final_fit, new_data = test) %>%
+  mae(truth = price, estimate = .pred)
+
+
+predictiones_2.1 <- predict(tree_final_fit, new_data = test)
+
+subida <- data.frame(
+  property_id = submission_template$property_id, 
+  .price = predictiones_2.1
+)
+colnames(subida)[2]<-"price"
+
+write.csv(subida,file='Arbol.csv', row.names=FALSE)
+
+
+predictiones_2.2 <- predict(rf_final_fit, new_data = test)
+
+subida <- data.frame(
+  property_id = submission_template$property_id, 
+  .price = predictiones_2.2
+)
+colnames(subida)[2]<-"price"
+
+write.csv(subida,file='RF.csv', row.names=FALSE)
+
+
+
+predictiones_2.3 <- predict(boost_final, new_data = test)
+
+subida <- data.frame(
+  property_id = submission_template$property_id, 
+  .price = predictiones_2.3
+)
+colnames(subida)[2]<-"price"
+
+write.csv(subida,file='Boost.csv', row.names=FALSE)
+
+
+
+
+
