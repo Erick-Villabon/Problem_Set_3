@@ -10,7 +10,7 @@
 library(pacman)
 p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, openxlsx, glmnet,
        rio, leaflet, rgeos, modeldata, vtable, tmaptools, sf, osmdata, tidymodels, writexl, 
-       units, randomForest, rattle, spatialsample, xgboost)
+       units, randomForest, rattle, spatialsample, xgboost, bst, caret, keras, discrim, plyr, dplyr)
 
 # - Revisar el espacio de trabajo
 #setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
@@ -29,6 +29,7 @@ list.files()
 
 train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
 db <- rbind(test, train)
+
 
 ##________________________________________________________________________
 #
@@ -244,196 +245,164 @@ write.table(predictiones_1.3, file = "Elastic_Net_1.csv", sep = ",", row.names =
 
 
 
+
+
 ##________________________________________________________________________
 #
 #                                 Arboles
 #
 ##________________________________________________________________________
 
+set.seed(123)
 
+fitControl<-trainControl(method ="cv",
+                         number=5)
 
-
-# Tune grid aleatorio para el modelo de árboles
-tune_grid_tree <- grid_random(
-  tree_depth(range = c(1, 10)),
-  min_n(range = c(1, 20)),
-  size = 5
-)
-
-## Modelo de arboles
-tree_spec <- decision_tree(
-  tree_depth = tune(),
-  min_n = tune()
-) %>%
-  set_mode("regression")
-
-# Tune grid aleatorio para el modelo de rf
-rf_grid_random <- grid_random(  mtry(range = c(2, 4)),
-                                min_n(range = c(1, 10)),
-                                trees(range = c(100, 300)), size = 4)
-# Agregar modelos basados en árboles
-# Random Forest
-
-# Modelo de rf
-rf_spec<- rand_forest(
-  mtry = tune(),              
-  min_n = tune(),             
-  trees = tune(),
-) %>%
-  set_engine("randomForest") %>%
-  set_mode("regression")       
-
-# Tune grid aleatorio para el modelo de boost
-tune_grid_boost <- grid_random(
-  trees(range = c(400, 600)),
-  min_n(range = c(1, 3)),
-  learn_rate(range = c(0.001, 0.01)), size = 4
-)
-
-# Especificación del modelo boost_tree en tidymodels
-boost_spec <- boost_tree(
-  trees = tune(),
-  min_n = tune(),
-  learn_rate = tune()
-) %>%
-  set_mode("regression")  
-
-# Primera receta
 rec_1 <- recipe(Ingtot ~ edad + edad_2 + mujer + estudiante + 
                   primaria + secundaria  + media + 
                   superior + exp_trab_actual + cuartosxpersonas + 
                   num_menores + ciudad + amortizacion + arriendo1 + casapropia +
                   casahipoteca + casausufructo + casasintitulo + casaarriendo + Des +
-                  Ina, data = db)%>% 
-  step_dummy(all_nominal_predictors())
+                  Ina, data = db) %>%
+  step_novel(all_nominal_predictors()) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_zv(all_predictors()) 
 
 
-#rec_1 <- recipe(price ~ surface_total + bathrooms + bedrooms + property_type + area_universidades + 
-#                  area_comercial + area_parques + distancia_bus  +
- #                 distancia_bus + distancia_policia + estrato , data = db) %>%
-  #step_interact(terms = ~ estrato:bedrooms+bathrooms:property_type) %>% 
-  #step_novel(all_nominal_predictors()) %>% 
-  #step_dummy(all_nominal_predictors()) %>% 
-  #step_zv(all_predictors()) %>% 
-  #step_normalize(all_predictors())
-
-
-## para el caso de los arboles incorpora no linealidades.
-
-workflow_1.1 <- workflow() %>%
-  add_recipe(rec_1) %>%
-  add_model(tree_spec)
-
-workflow_1.2 <- workflow() %>%
-  add_recipe(rec_1) %>%
-  add_model(rf_spec)
-
-workflow_1.3 <- workflow() %>%
-  add_recipe(rec_1) %>%
-  add_model(boost_spec)  
-
-
-tune_tree <- tune_grid(
-  workflow_1.1, 
-  grid = tune_grid_tree,
-  metrics = metric_set(mae)
+tree_boosted <- train(
+  rec_1,
+  data=train,
+  method = "bstTree",
+  trControl = fitControl,
+  tuneGrid=expand.grid(
+    mstop = c(400,500,600), #Boosting Iterations (M)
+    maxdepth = c(1,2,3), # Max Tree Depth (d)
+    nu = c(0.01,0.001)) # Shrinkage (lambda)
 )
 
-
-tune_rf <- tune_grid(
-  workflow_1.2, 
-  grid = rf_grid_random,
-  metrics = metric_set(mae)
-)
-
-
-
-tune_boost <- tune_grid(
-  workflow_1.3, 
-  grid = tune_grid_boost,
-  metrics = metric_set(mae)
-)
-
-# Utilizar 'select_best' para seleccionar el mejor valor.
-best_parms_tree <- select_best(tune_tree, metric = "mae")
-best_parms_tree
-
-# Utilizar 'select_best' para seleccionar el mejor valor.
-best_parms_rf<- select_best(tune_rf, metric = "mae")
-best_parms_rf
-
-# Utilizar 'select_best' para seleccionar el mejor valor.
-best_parms_boost <- select_best(tune_boost, metric = "mae")
-best_parms_boost
-
-# Finalizar el flujo de trabajo 'workflow' con el mejor valor de parametros
-tree_final <- finalize_workflow(workflow_1.1, best_parms_tree)
+tree_boosted
 
 # Ajustar el modelo  utilizando los datos de entrenamiento
-tree_final_fit <- fit(tree_final, data = test)
+boost_final_pred <- predict(tree_boosted, newdata = test) %>%
+  bind_cols(test) 
+
+boost_final_pred<- boost_final_pred %>%
+  select(id, ...1, lineapobreza, Pobre)
+
+boost_final_pred <- rename(boost_final_pred, c("Pobre" = "pobre"))
+boost_final_pred <- rename(boost_final_pred, c("...1" = "ingreso"))
+
+boost_final_pred$pobre <- ifelse(boost_final_pred$ingreso > boost_final_pred$lineapobreza, 0, 1)
+
+boost_final_pred<- boost_final_pred %>%
+  select(id, pobre)
+
+write.table(boost_final_pred, file = "Boost_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
-# Finalizar el flujo de trabajo 'workflow' con el mejor valor de parametros
-rf_final <- finalize_workflow(workflow_1.2, best_parms_rf)
-
-# Ajustar el modelo utilizando los datos de entrenamiento
-rf_final_fit <- fit(rf_final, data = test)
-
-
-# Finalizar el flujo de trabajo 'workflow' con el mejor valor de parametros
-boost_final <- finalize_workflow(workflow_1.3, best_parms_boost)
-
-# Ajustar el modelo  utilizando los datos de entrenamiento
-boost_final_fit <- fit(boost_final, data = test)
 
 
 
-augment(tree_final_fit, new_data = test) %>%
-  mae(truth = price, estimate = .pred)
+##________________________________________________________________________
+#
+#                                 Redes Neuronales
+#
+##________________________________________________________________________
+
+set.seed(123)  
+split <- initial_split(train, prop = 0.8)  
+
+train_data <- training(split)
+test_data <- testing(split)
+
+x_train <-train_data %>% select( -Ingtot)
+y_train <-train_data %>% pull(Ingtot)
+
+x_test <-test_data %>% select( -Ingtot)
+y_test <-test_data %>% pull(Ingtot)
+
+x_train <- subset(x_train, select = -c(Ingtotug, Pobre))
+y_train <- subset(y_train, select = -c(Ingtotug, Pobre))
+x_test <- subset(x_test, select = -c(Ingtotug, Pobre))
+y_test <- subset(y_test, select = -c(Ingtotug, Pobre))
 
 
-augment(rf_final_fit, new_data = test) %>%
-  mae(truth = price, estimate = .pred)
+
+#Normalizar todos los datos
+rec <- recipe(~., data = x_train) %>%
+  step_normalize(all_numeric())
+
+# Aplicar el preprocesamiento para normalizar los datos
+x_test<- prep(rec) %>% bake(new_data = x_test)
+# Aplicar el preprocesamiento para normalizar los datos
+x_train <- prep(rec) %>% bake(new_data = x_train)
 
 
-augment(boost_final_fit, new_data = test) %>%
-  mae(truth = price, estimate = .pred)
 
 
-predictiones_2.1 <- predict(tree_final_fit, new_data = test)
 
-subida <- data.frame(
-  property_id = submission_template$property_id, 
-  .price = predictiones_2.1
+
+########Relu
+model_simple_relu <- keras_model_sequential() %>%
+  layer_dense(units = 1, input_shape = ncol(x_train), activation = "relu")
+
+model_simple_relu %>% compile(
+  loss = "mean_squared_error",
+  optimizer = optimizer_rmsprop(),
+  metrics = c("mean_squared_error")
 )
-colnames(subida)[2]<-"price"
 
-write.csv(subida,file='Arbol.csv', row.names=FALSE)
-
-
-predictiones_2.2 <- predict(rf_final_fit, new_data = test)
-
-subida <- data.frame(
-  property_id = submission_template$property_id, 
-  .price = predictiones_2.2
+model_simple_relu %>% compile(
+  loss = "mean_squared_error",
+  optimizer = optimizer_rmsprop(),
+  metrics = c("mean_squared_error")
 )
-colnames(subida)[2]<-"price"
 
-write.csv(subida,file='RF.csv', row.names=FALSE)
+model_simple_relu %>% fit(x_train, y_train, epochs = 5, verbose = 0,batch_size = 60)
+predictions <- model_simple_relu %>% predict(x_test)
+rmse_result <- sqrt(mean((predictions - y_test)^2))
+print(paste("RMSE:", rmse_result))
 
 
+#########Tanh
+model_simple_tanh <- keras_model_sequential() %>%
+  layer_dense(units = 1, input_shape = ncol(x_train), activation = "tanh")
 
-predictiones_2.3 <- predict(boost_final, new_data = test)
-
-subida <- data.frame(
-  property_id = submission_template$property_id, 
-  .price = predictiones_2.3
+model_simple_tanh %>% compile(
+  loss = "mean_squared_error",
+  optimizer = optimizer_rmsprop(),
+  metrics = c("mean_squared_error")
 )
-colnames(subida)[2]<-"price"
 
-write.csv(subida,file='Boost.csv', row.names=FALSE)
+model_simple_tanh %>% compile(
+  loss = "mean_squared_error",
+  optimizer = optimizer_rmsprop(),
+  metrics = c("mean_squared_error")
+)
+
+model_simple_tanh %>% fit(x_train, y_train, epochs = 5, verbose = 0,batch_size = 60)
+predictions <- model_simple_tanh %>% predict(x_test)
+rmse_result <- sqrt(mean((predictions - y_test)^2))
+print(paste("RMSE:", rmse_result))
 
 
+##########Modelocomplejo
+model <- keras_model_sequential() %>%
+  layer_dense(units = 52, input_shape = ncol(x_train) , activation = "relu") %>%
+  layer_dense(units = 26, activation = "tanh") %>%
+  layer_dense(units = 1)
 
+model %>% compile(
+  loss = "mean_squared_error",  # Función de pérdida para regresión
+  optimizer = optimizer_rmsprop(),  # Selecciona el optimizador adecuado
+  metrics = c("mean_squared_error")
+)
 
+model %>% fit(x_train, y_train, epochs = 15, verbose = 2, batch_size = 60)
+score <- model %>% evaluate(x_test, y_test, verbose = 0)
+cat('Test loss:', score["loss"], "\n")
+
+predictions <- model %>% predict(x_test)
+rmse_result <- sqrt(mean((predictions - y_test)^2))
+print(paste("RMSE:", rmse_result))
 
