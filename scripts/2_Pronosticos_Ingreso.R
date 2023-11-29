@@ -196,15 +196,15 @@ predictiones_1.1 <- predict(fit_1.1 , new_data = test) %>%
 predictiones_1.1<- predictiones_1.1 %>%
   select(id, .pred, lineapobreza, Pobre)
 
-predictiones_1.1 <- rename(predictiones_1.1, c("ingreso" = ".pred"))
-predictiones_1.1 <- rename(predictiones_1.1, c("pobre" = "Pobre"))
+predictiones_1.1 <- rename(predictiones_1.1, c(".pred" = "ingreso"))
+predictiones_1.1 <- rename(predictiones_1.1, c("Pobre" = "pobre"))
 
 predictiones_1.1$pobre <- ifelse(predictiones_1.1$ingreso > predictiones_1.1$lineapobreza, 0, 1)
 
 predictiones_1.1<- predictiones_1.1 %>%
   select(id, pobre)
 
-write.table(predictiones_1.1, file = "Ridge_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+write.table(predictiones_1.1, file = "Ridge_2.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
 
@@ -214,15 +214,15 @@ predictiones_1.2 <- predict(fit_1.2 , new_data = test)%>%
 predictiones_1.2<- predictiones_1.2 %>%
   select(id, .pred, lineapobreza, Pobre)
 
-predictiones_1.2 <- rename(predictiones_1.2, c("ingreso" = ".pred"))
-predictiones_1.2 <- rename(predictiones_1.2, c("pobre" = "Pobre"))
+predictiones_1.2 <- rename(predictiones_1.2, c(".pred" = "ingreso"))
+predictiones_1.2 <- rename(predictiones_1.2, c("Pobre" = "pobre"))
 
 predictiones_1.2$pobre <- ifelse(predictiones_1.2$ingreso > predictiones_1.2$lineapobreza, 0, 1)
 
 predictiones_1.2<- predictiones_1.2 %>%
   select(id, pobre)
 
-write.table(predictiones_1.2, file = "Lasso_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+write.table(predictiones_1.2, file = "Lasso_2.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
 
@@ -232,15 +232,15 @@ predictiones_1.3 <- predict(fit_1.3, new_data = test) %>%
 predictiones_1.3<- predictiones_1.3 %>%
   select(id, .pred, lineapobreza, Pobre)
 
-predictiones_1.3 <- rename(predictiones_1.3, c("ingreso" = ".pred"))
-predictiones_1.3 <- rename(predictiones_1.3, c("pobre" = "Pobre"))
+predictiones_1.3 <- rename(predictiones_1.3, c(".pred" = "ingreso"))
+predictiones_1.3 <- rename(predictiones_1.3, c("Pobre" = "pobre"))
 
 predictiones_1.3$pobre <- ifelse(predictiones_1.3$ingreso > predictiones_1.3$lineapobreza, 0, 1)
 
 predictiones_1.3<- predictiones_1.3 %>%
   select(id, pobre)
 
-write.table(predictiones_1.3, file = "Elastic_Net_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+write.table(predictiones_1.3, file = "Elastic_Net_2.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
 
@@ -297,7 +297,7 @@ boost_final_pred$pobre <- ifelse(boost_final_pred$ingreso > boost_final_pred$lin
 boost_final_pred<- boost_final_pred %>%
   select(id, pobre)
 
-write.table(boost_final_pred, file = "Boost_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+write.table(boost_final_pred, file = "Boost_2.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
 
@@ -310,6 +310,8 @@ write.table(boost_final_pred, file = "Boost_1.csv", sep = ",", row.names = FALSE
 ##________________________________________________________________________
 
 set.seed(123)  
+
+train <- subset(train, select = -c(Ingtotug,Pobre))
 split <- initial_split(train, prop = 0.8)  
 
 train_data <- training(split)
@@ -320,11 +322,6 @@ y_train <-train_data %>% pull(Ingtot)
 
 x_test <-test_data %>% select( -Ingtot)
 y_test <-test_data %>% pull(Ingtot)
-
-x_train <- subset(x_train, select = -c(Ingtotug, Pobre))
-y_train <- subset(y_train, select = -c(Ingtotug, Pobre))
-x_test <- subset(x_test, select = -c(Ingtotug, Pobre))
-y_test <- subset(y_test, select = -c(Ingtotug, Pobre))
 
 
 
