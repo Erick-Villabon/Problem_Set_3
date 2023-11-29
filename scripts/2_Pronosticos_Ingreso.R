@@ -286,18 +286,15 @@ tree_boosted <- train(
 
 tree_boosted
 
-boost_final_fit <- tree_boosted %>%
-  fit(data = train)
-
 # Ajustar el modelo  utilizando los datos de entrenamiento
-boost_final_pred <- predict(boost_final_fit, new_data = test) %>%
+boost_final_pred <- predict(tree_boosted, newdata = test) %>%
   bind_cols(test) 
 
 boost_final_pred<- boost_final_pred %>%
-  select(id, .pred, lineapobreza, Pobre)
+  select(id, ...1, lineapobreza, Pobre)
 
-boost_final_pred <- rename(boost_final_pred, c("ingreso" = ".pred"))
-boost_final_pred <- rename(boost_final_pred, c("pobre" = "Pobre"))
+boost_final_pred <- rename(boost_final_pred, c("Pobre" = "pobre"))
+boost_final_pred <- rename(boost_final_pred, c("...1" = "ingreso"))
 
 boost_final_pred$pobre <- ifelse(boost_final_pred$ingreso > boost_final_pred$lineapobreza, 0, 1)
 
