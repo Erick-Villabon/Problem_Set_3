@@ -8,9 +8,9 @@
 # - Librerias y paquetes 
 
 library(pacman)
-p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, openxlsx, glmnet,
-       rio, leaflet, rgeos, modeldata, vtable, tmaptools, sf, osmdata, tidymodels, writexl, 
-       units, randomForest, rattle, spatialsample, xgboost, bst, caret, keras, discrim, plyr, dplyr)
+p_load(rvest, tidyverse, ggplot2, psych, boot, glmnet, tune, rsample, parsnip,
+       rio, leaflet, modeldata, vtable, sf, osmdata, tidymodels, writexl, 
+       units, randomForest, rattle, spatialsample, xgboost, bst, caret, keras, discrim, plyr, dplyr, ranger, rpart)
 
 # - Revisar el espacio de trabajo
 setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
@@ -253,6 +253,8 @@ write.table(predictiones_1.3, file = "Elastic_Net_2.csv", sep = ",", row.names =
 #
 ##________________________________________________________________________
 
+##BOOST
+
 set.seed(123)
 
 fitControl<-trainControl(method ="cv",
@@ -299,6 +301,37 @@ boost_final_pred<- boost_final_pred %>%
 
 write.table(boost_final_pred, file = "Boost_2.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
+
+
+##Random Forest
+
+tree_ranger <- train(
+  rec_1,
+  data=train,
+  method = "ranger",
+  trControl = fitControl,
+  tuneGrid=expand.grid(
+    mtry = c(1,2,3),
+    splitrule = "variance",
+    min.node.size = c(5,10,15))
+)
+
+# Ajustar el modelo  utilizando los datos de entrenamiento
+ranger_final_pred <- predict(tree_ranger, newdata = test) %>%
+  bind_cols(test) 
+
+ranger_final_pred<- ranger_final_pred %>%
+  select(id, ...1, lineapobreza, Pobre)
+
+ranger_final_pred <- rename(ranger_final_pred, c("Pobre" = "pobre"))
+ranger_final_pred <- rename(ranger_final_pred, c("...1" = "ingreso"))
+
+ranger_final_pred$pobre <- ifelse(ranger_final_pred$ingreso > ranger_final_pred$lineapobreza, 0, 1)
+
+ranger_final_pred<- ranger_final_pred %>%
+  select(id, pobre)
+
+write.table(ranger_final_pred, file = "Boost_2.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
 

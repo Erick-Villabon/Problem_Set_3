@@ -28,8 +28,8 @@ p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, ope
        units, randomForest, rattle, spatialsample)
 
 # - Actualizar espacio de trabajo 
-#setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
-setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
+setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
+#setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
 
 getwd()
 list.files()
