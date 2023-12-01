@@ -331,7 +331,7 @@ ranger_final_pred$pobre <- ifelse(ranger_final_pred$ingreso > ranger_final_pred$
 ranger_final_pred<- ranger_final_pred %>%
   select(id, pobre)
 
-write.table(ranger_final_pred, file = "Boost_2.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+write.table(ranger_final_pred, file = "Ranger_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
 
