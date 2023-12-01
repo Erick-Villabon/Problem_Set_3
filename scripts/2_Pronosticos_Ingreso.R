@@ -13,8 +13,8 @@ p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, ope
        units, randomForest, rattle, spatialsample, xgboost, bst, caret, keras, discrim, plyr, dplyr)
 
 # - Revisar el espacio de trabajo
-#setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
-setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
+setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
+#setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
 
 getwd()
 list.files()
@@ -303,103 +303,4 @@ write.table(boost_final_pred, file = "Boost_2.csv", sep = ",", row.names = FALSE
 
 
 
-##________________________________________________________________________
-#
-#                                 Redes Neuronales
-#
-##________________________________________________________________________
-
-set.seed(123)  
-
-train <- subset(train, select = -c(Ingtotug,Pobre))
-split <- initial_split(train, prop = 0.8)  
-
-train_data <- training(split)
-test_data <- testing(split)
-
-x_train <-train_data %>% select( -Ingtot)
-y_train <-train_data %>% pull(Ingtot)
-
-x_test <-test_data %>% select( -Ingtot)
-y_test <-test_data %>% pull(Ingtot)
-
-
-
-#Normalizar todos los datos
-rec <- recipe(~., data = x_train) %>%
-  step_normalize(all_numeric())
-
-# Aplicar el preprocesamiento para normalizar los datos
-x_test<- prep(rec) %>% bake(new_data = x_test)
-# Aplicar el preprocesamiento para normalizar los datos
-x_train <- prep(rec) %>% bake(new_data = x_train)
-
-
-
-
-
-
-########Relu
-model_simple_relu <- keras_model_sequential() %>%
-  layer_dense(units = 1, input_shape = ncol(x_train), activation = "relu")
-
-model_simple_relu %>% compile(
-  loss = "mean_squared_error",
-  optimizer = optimizer_rmsprop(),
-  metrics = c("mean_squared_error")
-)
-
-model_simple_relu %>% compile(
-  loss = "mean_squared_error",
-  optimizer = optimizer_rmsprop(),
-  metrics = c("mean_squared_error")
-)
-
-model_simple_relu %>% fit(x_train, y_train, epochs = 5, verbose = 0,batch_size = 60)
-predictions <- model_simple_relu %>% predict(x_test)
-rmse_result <- sqrt(mean((predictions - y_test)^2))
-print(paste("RMSE:", rmse_result))
-
-
-#########Tanh
-model_simple_tanh <- keras_model_sequential() %>%
-  layer_dense(units = 1, input_shape = ncol(x_train), activation = "tanh")
-
-model_simple_tanh %>% compile(
-  loss = "mean_squared_error",
-  optimizer = optimizer_rmsprop(),
-  metrics = c("mean_squared_error")
-)
-
-model_simple_tanh %>% compile(
-  loss = "mean_squared_error",
-  optimizer = optimizer_rmsprop(),
-  metrics = c("mean_squared_error")
-)
-
-model_simple_tanh %>% fit(x_train, y_train, epochs = 5, verbose = 0,batch_size = 60)
-predictions <- model_simple_tanh %>% predict(x_test)
-rmse_result <- sqrt(mean((predictions - y_test)^2))
-print(paste("RMSE:", rmse_result))
-
-
-##########Modelocomplejo
-model <- keras_model_sequential() %>%
-  layer_dense(units = 52, input_shape = ncol(x_train) , activation = "relu") %>%
-  layer_dense(units = 26, activation = "tanh") %>%
-  layer_dense(units = 1)
-
-model %>% compile(
-  loss = "mean_squared_error",  # Función de pérdida para regresión
-  optimizer = optimizer_rmsprop(),  # Selecciona el optimizador adecuado
-  metrics = c("mean_squared_error")
-)
-
-model %>% fit(x_train, y_train, epochs = 15, verbose = 2, batch_size = 60)
-score <- model %>% evaluate(x_test, y_test, verbose = 0)
-cat('Test loss:', score["loss"], "\n")
-
-predictions <- model %>% predict(x_test)
-rmse_result <- sqrt(mean((predictions - y_test)^2))
-print(paste("RMSE:", rmse_result))
 
