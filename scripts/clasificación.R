@@ -6,6 +6,13 @@ p_load(tidyverse, # Manipular dataframe
        yardstick, # Matriz de Confusión
        ggplot2) # Graficas
 
+setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
+
+# 1. Importar las bases de datos ya preparadas enteriormente
+
+train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
+db <- rbind(test, train)
+
 
 #Dividir los datos en train y test
 set.seed(123)
@@ -14,14 +21,24 @@ train_data <- training(split)
 test_data  <- testing(split)
 
 #Crear un recipe
-receta <- recipe( ciudad ~ . , data = train_data) %>% 
+receta <- recipe( Ingtot ~ edad + edad_2 + mujer + estudiante + 
+                    primaria + secundaria  + media + 
+                    superior + exp_trab_actual + cuartosxpersonas + 
+                    num_menores + ciudad + amortizacion + arriendo1 + casapropia +
+                    casahipoteca + casausufructo + casasintitulo + casaarriendo + Des +
+                    Ina, data = train_data) %>% 
   step_rm(in_sf) %>% # eliminamos la variable continua que tiene la misma info que la variable objetivo
   step_center(all_predictors()) %>% # Centramos todas las variables
   step_scale(all_predictors()) # Reescalamos
 
 
 
-receta_lineal <- recipe(in_sf ~ ., data = train_data) %>%
+receta_lineal <- recipe(Ingtot ~ edad + edad_2 + mujer + estudiante + 
+                          primaria + secundaria  + media + 
+                          superior + exp_trab_actual + cuartosxpersonas + 
+                          num_menores + ciudad + amortizacion + arriendo1 + casapropia +
+                          casahipoteca + casausufructo + casasintitulo + casaarriendo + Des +
+                          Ina, data = train_data) %>%
   step_rm(ciudad) %>% # eliminamos la variable categórica que tiene la misma info que la variable objetivo
   step_center(all_predictors()) %>% # Centramos todas las variables
   step_scale(all_predictors()) # Reescalamos
