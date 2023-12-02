@@ -24,12 +24,13 @@ rm(list = ls())
 
 library(pacman)
 p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, openxlsx, glmnet,
-       rio, leaflet, rgeos, tmaptools, sf, osmdata, tidymodels, writexl, 
-       units, randomForest, rattle, spatialsample)
+       rio, leaflet, tmaptools, sf, osmdata, tidymodels, writexl, 
+       units, randomForest, rattle)
 
 # - Actualizar espacio de trabajo 
-setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
+#setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
 #setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
+setwd("E:/Problem_Set_3/stores")
 
 getwd()
 list.files()

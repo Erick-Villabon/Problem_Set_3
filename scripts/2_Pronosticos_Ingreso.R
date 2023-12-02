@@ -8,9 +8,9 @@
 # - Librerias y paquetes 
 
 library(pacman)
-p_load(rvest, tidyverse, ggplot2, psych, boot, glmnet, tune, rsample, parsnip,
-       rio, leaflet, modeldata, vtable, sf, osmdata, tidymodels, writexl, 
-       units, randomForest, rattle, spatialsample, xgboost, bst, caret, keras, discrim, plyr, dplyr, ranger, rpart)
+p_load(rvest, tidyverse, ggplot2, psych, boot, glmnet, tune, rsample, parsnip, tune,
+       rio, leaflet, modeldata, vtable, sf, osmdata, tidymodels, writexl, rsample, parsnip,
+       units, randomForest, rattle, xgboost, bst, caret, keras, discrim, plyr, dplyr, ranger, rpart)
 
 # - Revisar el espacio de trabajo
 setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
