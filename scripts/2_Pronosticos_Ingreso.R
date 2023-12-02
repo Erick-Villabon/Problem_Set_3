@@ -20,11 +20,11 @@ getwd()
 list.files()
 
 # 1. Importar las bases de datos ya preparadas enteriormente
-#***** test <- read.xlsx("test_2.xlsx")
+test <- read.xlsx("test_2.xlsx")
 
-#***** train <- read.xlsx("train_2.xlsx")
+train <- read.xlsx("train_2.xlsx")
 
-#***** submission_template <- read.csv("submission_template.csv")
+submission_template <- read.csv("submission_template.csv")
 
 
 train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
@@ -334,6 +334,16 @@ ranger_final_pred<- ranger_final_pred %>%
 write.table(ranger_final_pred, file = "Ranger_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
+##________________________________________________________________________
+#
+#                                 Arboles
+#
+##________________________________________________________________________
+
+
+##Redes Nuronales
+
+#https://colab.research.google.com/drive/1_vkcEB7SJYJs5DI15kzWeS3iq-i35d-U?usp=sharing
 
 
 

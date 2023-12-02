@@ -28,9 +28,9 @@ p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, ope
        units, randomForest, rattle)
 
 # - Actualizar espacio de trabajo 
-#setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
+setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
 #setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
-setwd("E:/Problem_Set_3/stores")
+#setwd("E:/Problem_Set_3/stores")
 
 getwd()
 list.files()
@@ -266,3 +266,9 @@ for (bas in bases) {
   rm(data)
   
   }
+
+
+write_xlsx(test, "test_2.xlsx")
+write_xlsx(train, "train_2.xlsx")
+
+
