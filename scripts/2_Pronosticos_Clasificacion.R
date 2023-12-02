@@ -11,9 +11,10 @@ rm(list = ls())
 # - Librerias y paquetes 
 
 library(pacman)
-p_load(rvest, tidyverse, ggplot2, robotstxt, psych, stargazer, boot, plotly, openxlsx, glmnet,
-       rio, leaflet, rgeos, modeldata, vtable, tmaptools, sf, osmdata, tidymodels, writexl, 
-       units, randomForest, rattle, spatialsample, xgboost)
+p_load(tidyverse, # Manipular dataframe
+       tidymodels, # ML modelos
+       yardstick, # Matriz de Confusión
+       ggplot2) # Graficas
 
 # - Revisar el espacio de trabajo
 setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
@@ -23,8 +24,105 @@ getwd()
 list.files()
 
 # 1. Importar las bases de datos ya preparadas enteriormente
-#test <- read.xlsx("test_2.xlsx")
+test <- read.xlsx("test_2.xlsx")
 
-#train <- read.xlsx("train_2.xlsx")
+train <- read.xlsx("train_2.xlsx")
 
-#submission_template <- read.csv("submission_template.csv")
+submission_template <- read.csv("submission_template.csv")
+
+
+
+##Preparar las bases 
+
+train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
+db <- rbind(test, train)
+
+
+#Dividir los datos en train y test
+set.seed(123)
+split <- initial_split(train, prop = .75)
+train_data <- training(split)
+test_data  <- testing(split)
+
+#Crear un recipe
+receta <- recipe( Ingtot ~ edad + edad_2 + mujer + estudiante + 
+                    primaria + secundaria  + media + 
+                    superior + exp_trab_actual + cuartosxpersonas + 
+                    num_menores + ciudad + amortizacion + arriendo1 + casapropia +
+                    casahipoteca + casausufructo + casasintitulo + casaarriendo + Des +
+                    Ina, data = train_data) %>% 
+  step_rm(in_sf) %>% # eliminamos la variable continua que tiene la misma info que la variable objetivo
+  step_center(all_predictors()) %>% # Centramos todas las variables
+  step_scale(all_predictors()) # Reescalamos
+
+
+
+receta_lineal <- recipe(Ingtot ~ edad + edad_2 + mujer + estudiante + 
+                          primaria + secundaria  + media + 
+                          superior + exp_trab_actual + cuartosxpersonas + 
+                          num_menores + ciudad + amortizacion + arriendo1 + casapropia +
+                          casahipoteca + casausufructo + casasintitulo + casaarriendo + Des +
+                          Ina, data = train_data) %>%
+  step_rm(ciudad) %>% # eliminamos la variable categórica que tiene la misma info que la variable objetivo
+  step_center(all_predictors()) %>% # Centramos todas las variables
+  step_scale(all_predictors()) # Reescalamos
+
+
+linear_spec <- linear_reg() %>%
+  set_engine("lm") %>%
+  set_mode("regression")
+
+
+workflow_lineal <- workflow() %>%
+  add_recipe(receta_lineal) %>%
+  add_model(linear_spec)
+
+modelo_lineal <- fit(workflow_lineal, data = train_data)
+
+
+# Sacar predicciones
+test_data <- test_data %>%
+  mutate(predicciones_lineal = predict(modelo_lineal, test_data)$.pred)
+
+
+#Logit 
+modelo_logit <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")
+
+workflow_logit <- workflow() %>%
+  add_recipe(receta) %>%
+  add_model(modelo_logit)
+
+modelo_logit <- workflow_logit %>%
+  fit(data = train_data)
+
+
+test_data <- test_data %>%
+  mutate(predicciones_logit = predict(modelo_logit, test_data)$.pred_class)
+matriz_logit <- conf_mat(test_data, truth = ciudad, estimate = predicciones_logit)
+print(matriz_logit)
+
+
+#Probit
+probit_spec <- logistic_reg() %>% 
+  set_engine("glm", family = stats::binomial(link = "probit")) %>%
+  set_mode("classification") %>% 
+  translate()
+
+workflow_probit <- workflow() %>%
+  add_recipe(receta) %>%
+  add_model(probit_spec)
+
+modelo_probit <- fit(workflow_probit, data = train_data)
+
+
+
+test_data <- test_data %>%
+  mutate(predicciones_probit = predict(modelo_probit, test_data)$.pred_class)
+matriz_probit <- conf_mat(test_data, truth = ciudad, estimate = predicciones_probit)
+print(matriz_probit)
+
+
+
+
