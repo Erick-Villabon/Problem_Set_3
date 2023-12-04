@@ -14,17 +14,18 @@ library(pacman)
 p_load(tidyverse, # Manipular dataframe
        tidymodels, # ML modelos
        yardstick, # Matriz de Confusión
-       ggplot2,
+       ggplot2, dplyr,
        caret,
        rpart,
        ranger,
        tune, rsample, parsnip,
        units, randomForest, rattle, xgboost, bst, caret, keras, discrim, plyr, dplyr,
-       openxlsx, adabag) 
+       openxlsx, adabag, klaR) 
 
 # - Revisar el espacio de trabajo
-setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
+#setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
 #setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
+setwd("E:/Problem_Set_3/stores")
 
 getwd()
 list.files()
@@ -47,8 +48,8 @@ train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
 pobre<-train$Pobre 
 pobre_1<-test$Pobre 
 
-#test<-test %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
-#train<-train %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
+test<-test %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
+train<-train %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
 
 
 db <- rbind(test, train)
@@ -139,12 +140,26 @@ class_bosques_1 <- train(
   method = "ranger",
   trControl = ctrl,
   tuneGrid=expand.grid(
-    mtry = c(1,2,3,4,5,6,7),
+    mtry = c(1,2,3,4,5),
     splitrule = "gini",
     min.node.size = c(5,10,15,30))
 )
 
+class_arboles
 
+bosque_pred <- predict(class_bosques_1, newdata = test) %>% 
+  bind_cols(test) 
+
+bosque_pred<- bosque_pred %>%
+  select(id, ...1)
+
+bosque_pred$pobre<-0
+bosque_pred$pobre <- ifelse(bosque_pred$...1 == "Si", 1, 0)
+
+bosque_pred<- bosque_pred %>%
+  select(id, pobre)
+
+write.table(bosque_pred, file = "bosque_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 ##Adaboost
 
@@ -157,7 +172,97 @@ class_adaboost <- train(
   method = "AdaBoost.M1",
   trControl = ctrl,
   tuneGrid=expand.grid(
-    mfinal = c(300,400,500),
+    mfinal = c(50,100),
     maxdepth = c(1,2,3),
     coeflearn = c('Breiman','Freund'))
 )
+
+class_adaboost 
+
+boost_pred <- predict(class_adaboost , newdata = test) %>% 
+  bind_cols(test) 
+
+boost_pred<- boost_pred %>%
+  select(id, ...1)
+
+boost_pred$pobre<-0
+boost_pred$pobre <- ifelse(boost_pred$...1 == "Si", 1, 0)
+
+boost_pred<- boost_pred %>%
+  select(id, pobre)
+
+write.table(boost_pred, file = "boost_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+
+##Generative models
+
+##LDA
+set.seed(123)
+lda_fit = train(rec_1,
+                data=train,
+                method="lda",
+                trControl = ctrl)
+
+lda_fit
+
+lda_pred <- predict(lda_fit , newdata = test) %>% 
+  bind_cols(test) 
+
+lda_pred$pobre<-0
+lda_pred$pobre <- ifelse(lda_pred$...1 == "Si", 1, 0)
+
+lda_pred<- lda_pred %>%
+  select(id,pobre)
+
+write.table(lda_pred, file = "LDA_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+
+###QDA
+set.seed(123)
+qda_fit = train(rec_1, 
+                data=train, 
+                method="qda",
+                trControl = ctrl)
+
+qda_fit
+
+
+
+
+
+
+#####Naive Bayes
+set.seed(123)
+mylogit_nb <- train(rec_1,
+                    data = train, 
+                    method = "nb",
+                    trControl = ctrl,
+                    tuneGrid=expand.grid(fL=seq(0,10,length.out = 5),
+                                         usekernel=TRUE,
+                                         adjust=seq(1,10,length.out = 5)))
+
+
+
+mylogit_nb
+
+
+
+
+
+
+
+
+
+
+
+####KNN
+set.seed(123)
+mylogit_knn <- train(rec_1,
+                     data = train, 
+                     method = "knn",
+                     trControl = ctrl,
+                     tuneGrid = expand.grid(k=c(3,5,7,9,11)))
+
+
+mylogit_knn
+
