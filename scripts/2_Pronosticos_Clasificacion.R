@@ -18,7 +18,7 @@ p_load(tidyverse, # Manipular dataframe
        caret,
        rpart,
        ranger,
-       tune, rsample, parsnip,
+       tune, rsample, parsnip, rpart,
        units, randomForest, rattle, xgboost, bst, caret, keras, discrim, plyr, dplyr,
        openxlsx, adabag, klaR) 
 
@@ -47,10 +47,6 @@ train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
 ##Defino
 pobre<-train$Pobre 
 pobre_1<-test$Pobre 
-
-test<-test %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
-train<-train %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
-
 
 db <- rbind(test, train)
 
@@ -101,7 +97,6 @@ logit_pred<- logit_pred %>%
 write.table(logit_pred, file = "Logit_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
-
 #Arbol
 ###############
 set.seed(123)
@@ -132,6 +127,17 @@ write.table(arbol_pred, file = "Arbol_class_1.csv", sep = ",", row.names = FALSE
 ####BOSQUES
 ###############
 
+##################################
+##########################
+#  CATEGORIZAR
+
+test<-test %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
+train<-train %>% mutate(Pobre=factor(Pobre,levels=c(0,1),labels=c("No","Si")))
+
+
+############
+##Bosque
+
 set.seed(123)
 
 class_bosques_1 <- train(
@@ -161,9 +167,8 @@ bosque_pred<- bosque_pred %>%
 
 write.table(bosque_pred, file = "bosque_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
+
 ##Adaboost
-
-
 set.seed(123)
 
 class_adaboost <- train(
@@ -217,20 +222,6 @@ lda_pred<- lda_pred %>%
 write.table(lda_pred, file = "LDA_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
-###QDA
-set.seed(123)
-qda_fit = train(rec_1, 
-                data=train, 
-                method="qda",
-                trControl = ctrl)
-
-qda_fit
-
-
-
-
-
-
 #####Naive Bayes
 set.seed(123)
 mylogit_nb <- train(rec_1,
@@ -245,14 +236,16 @@ mylogit_nb <- train(rec_1,
 
 mylogit_nb
 
+NVB_pred <- predict(mylogit_nb , newdata = test) %>% 
+  bind_cols(test) 
 
+NVB_pred$pobre<-0
+NVB_pred$pobre <- ifelse(NVB_pred$...1 == "Si", 1, 0)
 
+NVB_pred<- NVB_pred %>%
+  select(id,pobre)
 
-
-
-
-
-
+write.table(NVB_pred, file = "NVB_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
 ####KNN
@@ -261,8 +254,32 @@ mylogit_knn <- train(rec_1,
                      data = train, 
                      method = "knn",
                      trControl = ctrl,
-                     tuneGrid = expand.grid(k=c(3,5,7,9,11)))
+                     tuneGrid = expand.grid(k=c(3,5,9)))
 
 
 mylogit_knn
 
+knn_pred <- predict(mylogit_knn , newdata = test) %>% 
+  bind_cols(test) 
+
+knn_pred$pobre<-0
+knn_pred$pobre <- ifelse(knn_pred$...1 == "Si", 1, 0)
+
+knn_pred<- knn_pred %>%
+  select(id,pobre)
+
+write.table(knn_pred, file = "KNN_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+
+
+
+##________________________________________________________________________
+#
+#                                 Redes Neuronales
+#
+##________________________________________________________________________
+
+
+##Redes Nuronales
+
+#https://colab.research.google.com/drive/1_vkcEB7SJYJs5DI15kzWeS3iq-i35d-U?usp=sharing
