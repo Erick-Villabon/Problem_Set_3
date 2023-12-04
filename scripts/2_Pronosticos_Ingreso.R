@@ -13,8 +13,9 @@ p_load(rvest, tidyverse, ggplot2, psych, boot, glmnet, tune, rsample, parsnip, t
        units, randomForest, rattle, xgboost, bst, caret, keras, discrim, plyr, dplyr, ranger, rpart)
 
 # - Revisar el espacio de trabajo
-setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
+#setwd("/Users/juandiego/Desktop/GitHub/Problem_Set_3/stores")
 #setwd("C:/Users/Erick/Desktop/Problem_Set_3/stores")
+setwd("E:/Problem_Set_3/stores")
 
 getwd()
 list.files()
@@ -458,15 +459,15 @@ write.table(ranger_final_pred, file = "Ranger_1.csv", sep = ",", row.names = FAL
 
 ####RANDOMFOREST
 ###Obtener RMSE
-ranger_final_pred <- predict(tree_ranger , new_data = train) %>%
+ranger_final_pred <- predict(tree_ranger , newdata = train) %>%
   bind_cols(train) 
 
 ranger_final_pred<- ranger_final_pred %>%
-  select(id, .pred, lineapobreza, Pobre)
+  select(id, ...1, lineapobreza, Pobre)
 
 ranger_final_pred$pobre
 
-ranger_final_pred <- rename(ranger_final_pred, c("ingreso" = ".pred"))
+ranger_final_pred <- rename(ranger_final_pred, c("...1" = "ingreso"))
 
 ranger_final_pred$pobre <- ifelse(ranger_final_pred$ingreso > ranger_final_pred$lineapobreza, 0, 1)
 
@@ -480,20 +481,6 @@ r_squared <- cor(ranger_final_pred$pobre, ranger_final_pred$Pobre)^2
 r_squared
 
 ###Obtener MAE
-mae <- mae(ranger_final_pred$Pobre, ranger_final_pred$pobre)
+mae <- Metrics::mae(ranger_final_pred$Pobre, ranger_final_pred$pobre)
 mae
-
-
-##________________________________________________________________________
-#
-#                                 Redes Neuronales
-#
-##________________________________________________________________________
-
-
-##Redes Nuronales
-
-#https://colab.research.google.com/drive/1_vkcEB7SJYJs5DI15kzWeS3iq-i35d-U?usp=sharing
-
-
 

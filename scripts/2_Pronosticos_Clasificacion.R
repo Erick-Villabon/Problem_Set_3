@@ -70,6 +70,8 @@ ctrl<- trainControl(method = "cv",
                     verbose=FALSE,
                     savePredictions = T)
 
+
+###################
 #LOGIT
 ##########
 
@@ -84,9 +86,6 @@ mylogit_caret
 
 logit_pred <- predict(mylogit_caret, newdata = test) %>% 
   bind_cols(test) 
-
-logit_pred<- logit_pred %>%
-  select(id, ...1)
 
 logit_pred$pobre<-0
 logit_pred$pobre <- ifelse(logit_pred$...1 > 0.5, 1, 0)
@@ -103,7 +102,28 @@ write.table(logit_pred, file = "Logit_class_1.csv", sep = ",", row.names = FALSE
 #####################
 
 ##Accuracy
+logit_pred <- predict(mylogit_caret, newdata = train) %>% 
+  bind_cols(train) 
 
+logit_pred<- logit_pred %>%
+  select(id, ...1, Pobre)
+
+logit_pred$pobre<-0
+logit_pred$pobre <- ifelse(logit_pred$...1 > 0.5, 1, 0)
+
+logit_pred<- logit_pred %>%
+  select(id, pobre, Pobre)
+
+accuracy <- mean(logit_pred$pobre == logit_pred$Pobre)
+accuracy
+
+##Recall
+TP <- sum(logit_pred$pobre == 1 & logit_pred$Pobre == 1)
+FN <- sum(logit_pred$pobre == 0 & logit_pred$Pobre == 1)
+
+# Calculate Recall
+recall <- TP / (TP + FN)
+recall
 
 
 
@@ -132,6 +152,40 @@ arbol_pred<- arbol_pred %>%
   select(id, pobre)
 
 write.table(arbol_pred, file = "Arbol_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+######METRICAS
+#####################
+#####################
+#####################
+
+##Accuracy
+arbol_pred <- predict(class_arboles, newdata = train) %>% 
+  bind_cols(train) 
+
+arbol_pred<- arbol_pred %>%
+  select(id, ...1, Pobre)
+
+arbol_pred$pobre<-0
+arbol_pred$pobre <- ifelse(arbol_pred$...1 > 0.5, 1, 0)
+
+arbol_pred<- arbol_pred %>%
+  select(id, pobre, Pobre)
+
+accuracy <- mean(arbol_pred$pobre == arbol_pred$Pobre)
+accuracy
+
+##Recall
+TP <- sum(arbol_pred$pobre == 1 & arbol_pred$Pobre == 1)
+FN <- sum(arbol_pred$pobre == 0 & arbol_pred$Pobre == 1)
+
+# Calculate Recall
+recall <- TP / (TP + FN)
+recall
+
+
+
+
+
 
 
 ####BOSQUES
@@ -208,8 +262,42 @@ boost_pred<- boost_pred %>%
 
 write.table(boost_pred, file = "boost_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
+######METRICAS
+#####################
+#####################
+#####################
 
+##Accuracy
+boost_pred <- predict(class_adaboost, newdata = train) %>% 
+  bind_cols(train) 
+
+boost_pred<- boost_pred %>%
+  select(id, ...1, Pobre)
+
+boost_pred$pobre<-0
+boost_pred$pobre <- ifelse(boost_pred$...1 > 0.5, 1, 0)
+
+boost_pred<- boost_pred %>%
+  select(id, pobre, Pobre)
+
+accuracy <- mean(boost_pred$pobre == boost_pred$Pobre)
+accuracy
+
+##Recall
+TP <- sum(boost_pred$pobre == 1 & boost_pred$Pobre == 1)
+FN <- sum(boost_pred$pobre == 0 & boost_pred$Pobre == 1)
+
+# Calculate Recall
+recall <- TP / (TP + FN)
+recall
+
+
+
+
+
+###########################
 ##Generative models
+############################
 
 ##LDA
 set.seed(123)
@@ -230,6 +318,42 @@ lda_pred<- lda_pred %>%
   select(id,pobre)
 
 write.table(lda_pred, file = "LDA_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+
+######METRICAS
+#####################
+#####################
+#####################
+
+##Accuracy
+lda_pred <- predict(lda_fit, newdata = train) %>% 
+  bind_cols(train) 
+
+lda_pred<- lda_pred %>%
+  select(id, ...1, Pobre)
+
+lda_pred$pobre<-0
+lda_pred$pobre <- ifelse(lda_pred$...1 == "Si", 1, 0)
+
+lda_pred$Pobre_1<-0
+lda_pred$Pobre_1 <- ifelse(lda_pred$Pobre == "Si", 1, 0)
+
+lda_pred<- lda_pred %>%
+  select(id, pobre, Pobre_1)
+
+accuracy <- mean(lda_pred$pobre == lda_pred$Pobre_1)
+accuracy
+
+##Recall
+TP <- sum(lda_pred$pobre == 1 & lda_pred$Pobre_1 == 1)
+FN <- sum(lda_pred$pobre == 0 & lda_pred$Pobre_1 == 1)
+
+# Calculate Recall
+recall <- TP / (TP + FN)
+recall
+
+
+
 
 
 #####Naive Bayes
