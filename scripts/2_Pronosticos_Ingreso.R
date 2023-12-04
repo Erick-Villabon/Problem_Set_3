@@ -8,8 +8,8 @@
 # - Librerias y paquetes 
 
 library(pacman)
-p_load(rvest, tidyverse, ggplot2, psych, boot, glmnet, tune, rsample, parsnip, tune,
-       rio, leaflet, modeldata, vtable, sf, osmdata, tidymodels, writexl, rsample, parsnip,
+p_load(rvest, tidyverse, ggplot2, psych, boot, glmnet, tune, rsample, parsnip, tune, Metrics, tune, rsample, parsnip,
+       rio, leaflet, modeldata, vtable, sf, osmdata, tidymodels, writexl, rsample, parsnip, openxlsx, e1071,
        units, randomForest, rattle, xgboost, bst, caret, keras, discrim, plyr, dplyr, ranger, rpart)
 
 # - Revisar el espacio de trabajo
@@ -24,7 +24,7 @@ test <- read.xlsx("test_2.xlsx")
 
 train <- read.xlsx("train_2.xlsx")
 
-submission_template <- read.csv("submission_template.csv")
+submission_template <- read.csv("sample_submission.csv")
 
 
 train$Ingtot <- with(train, ifelse(is.na(Ingtot),Ingtotug,Ingtot))
@@ -67,8 +67,8 @@ y1 <- predict(fit_1, new_data = test) %>%
 y1<- y1 %>%
   select(id, .pred, lineapobreza, Pobre)
 
-y1 <- rename(y1, c("ingreso" = ".pred"))
-y1 <- rename(y1, c("pobre" = "Pobre"))
+y1 <- rename(y1, c(".pred" = "ingreso"))
+y1 <- rename(y1, c("Pobre" = "pobre"))
 
 y1$pobre <- ifelse(y1$ingreso > y1$lineapobreza, 0, 1)
 
@@ -79,6 +79,37 @@ write.table(y1, file = "ML_1.csv", sep = ",", row.names = FALSE, col.names = TRU
 
 
 
+######METRICAS
+#####################
+#####################
+#####################
+
+####ML
+###Obtener RMSE
+y1 <- predict(fit_1 , new_data = train) %>%
+  bind_cols(train) 
+
+y1<- y1 %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+y1$pobre
+
+y1 <- rename(y1, c(".pred" = "ingreso"))
+
+y1$pobre <- ifelse(y1$ingreso > y1$lineapobreza, 0, 1)
+
+y1<- y1 %>%
+  select(id, pobre, Pobre)
+
+sqrt(mean((y1$Pobre - y1$pobre)^2))
+
+###Obtener R cuadrado
+r_squared <- cor(y1$pobre, y1$Pobre)^2
+r_squared
+
+###Obtener MAE
+mae <- Metrics::mae(as.vector(y1$Pobre), as.vector(y1$pobre))
+mae
 
 ##________________________________________________________________________
 #
@@ -196,8 +227,8 @@ predictiones_1.1 <- predict(fit_1.1 , new_data = test) %>%
 predictiones_1.1<- predictiones_1.1 %>%
   select(id, .pred, lineapobreza, Pobre)
 
-predictiones_1.1 <- rename(predictiones_1.1, c(".pred" = "ingreso"))
-predictiones_1.1 <- rename(predictiones_1.1, c("Pobre" = "pobre"))
+predictiones_1.1 <- rename(predictiones_1.1, c("ingreso" = ".pred"))
+predictiones_1.1 <- rename(predictiones_1.1, c("pobre" = "Pobre"))
 
 predictiones_1.1$pobre <- ifelse(predictiones_1.1$ingreso > predictiones_1.1$lineapobreza, 0, 1)
 
@@ -214,8 +245,8 @@ predictiones_1.2 <- predict(fit_1.2 , new_data = test)%>%
 predictiones_1.2<- predictiones_1.2 %>%
   select(id, .pred, lineapobreza, Pobre)
 
-predictiones_1.2 <- rename(predictiones_1.2, c(".pred" = "ingreso"))
-predictiones_1.2 <- rename(predictiones_1.2, c("Pobre" = "pobre"))
+predictiones_1.2 <- rename(predictiones_1.2, c("ingreso" = ".pred"))
+predictiones_1.2 <- rename(predictiones_1.2, c("pobre" = "Pobre"))
 
 predictiones_1.2$pobre <- ifelse(predictiones_1.2$ingreso > predictiones_1.2$lineapobreza, 0, 1)
 
@@ -232,8 +263,8 @@ predictiones_1.3 <- predict(fit_1.3, new_data = test) %>%
 predictiones_1.3<- predictiones_1.3 %>%
   select(id, .pred, lineapobreza, Pobre)
 
-predictiones_1.3 <- rename(predictiones_1.3, c(".pred" = "ingreso"))
-predictiones_1.3 <- rename(predictiones_1.3, c("Pobre" = "pobre"))
+predictiones_1.3 <- rename(predictiones_1.3, c("ingreso" = ".pred"))
+predictiones_1.3 <- rename(predictiones_1.3, c("pobre" = "Pobre"))
 
 predictiones_1.3$pobre <- ifelse(predictiones_1.3$ingreso > predictiones_1.3$lineapobreza, 0, 1)
 
@@ -244,7 +275,94 @@ write.table(predictiones_1.3, file = "Elastic_Net_2.csv", sep = ",", row.names =
 
 
 
+######METRICAS
+#####################
+#####################
+#####################
 
+####LASSO
+###Obtener RMSE
+predictiones_1.2 <- predict(fit_1.2 , new_data = train) %>%
+  bind_cols(train) 
+
+predictiones_1.2<- predictiones_1.2 %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+predictiones_1.2$pobre
+
+predictiones_1.2 <- rename(predictiones_1.2, c("ingreso" = ".pred"))
+
+predictiones_1.2$pobre <- ifelse(predictiones_1.2$ingreso > predictiones_1.2$lineapobreza, 0, 1)
+
+predictiones_1.2<- predictiones_1.2 %>%
+  select(id, pobre, Pobre)
+
+sqrt(mean((predictiones_1.2$Pobre - predictiones_1.2$pobre)^2))
+
+###Obtener R cuadrado
+r_squared <- cor(predictiones_1.2$pobre, predictiones_1.2$Pobre)^2
+r_squared
+
+###Obtener MAE
+mae <- mae(predictiones_1.2$Pobre, predictiones_1.2$pobre)
+mae
+
+
+
+####RIDGE
+###Obtener RMSE
+predictiones_1.1 <- predict(fit_1.1 , new_data = train) %>%
+  bind_cols(train) 
+
+predictiones_1.1<- predictiones_1.1 %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+predictiones_1.1$pobre
+
+predictiones_1.1 <- rename(predictiones_1.1, c("ingreso" = ".pred"))
+
+predictiones_1.1$pobre <- ifelse(predictiones_1.1$ingreso > predictiones_1.1$lineapobreza, 0, 1)
+
+predictiones_1.1<- predictiones_1.1 %>%
+  select(id, pobre, Pobre)
+
+sqrt(mean((predictiones_1.1$Pobre - predictiones_1.1$pobre)^2))
+
+###Obtener R cuadrado
+r_squared <- cor(predictiones_1.1$pobre, predictiones_1.1$Pobre)^2
+r_squared
+
+###Obtener MAE
+mae <- mae(predictiones_1.1$Pobre, predictiones_1.1$pobre)
+mae
+
+
+####ELASTICNET
+###Obtener RMSE
+predictiones_1.3 <- predict(fit_1.3 , new_data = train) %>%
+  bind_cols(train) 
+
+predictiones_1.3<- predictiones_1.3 %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+predictiones_1.3$pobre
+
+predictiones_1.3 <- rename(predictiones_1.3, c("ingreso" = ".pred"))
+
+predictiones_1.3$pobre <- ifelse(predictiones_1.3$ingreso > predictiones_1.3$lineapobreza, 0, 1)
+
+predictiones_1.3<- predictiones_1.3 %>%
+  select(id, pobre, Pobre)
+
+sqrt(mean((predictiones_1.3$Pobre - predictiones_1.3$pobre)^2))
+
+###Obtener R cuadrado
+r_squared <- cor(predictiones_1.3$pobre, predictiones_1.3$Pobre)^2
+r_squared
+
+###Obtener MAE
+mae <- mae(predictiones_1.3$Pobre, predictiones_1.3$pobre)
+mae
 
 
 ##________________________________________________________________________
@@ -252,9 +370,6 @@ write.table(predictiones_1.3, file = "Elastic_Net_2.csv", sep = ",", row.names =
 #                                 Arboles
 #
 ##________________________________________________________________________
-
-##BOOST
-
 set.seed(123)
 
 fitControl<-trainControl(method ="cv",
@@ -271,6 +386,7 @@ rec_1 <- recipe(Ingtot ~ edad + edad_2 + mujer + estudiante +
   step_zv(all_predictors()) 
 
 
+##BOOST
 tree_boosted <- train(
   rec_1,
   data=train,
@@ -332,6 +448,40 @@ ranger_final_pred<- ranger_final_pred %>%
   select(id, pobre)
 
 write.table(ranger_final_pred, file = "Ranger_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
+
+
+
+######METRICAS
+#####################
+#####################
+#####################
+
+####RANDOMFOREST
+###Obtener RMSE
+ranger_final_pred <- predict(tree_ranger , new_data = train) %>%
+  bind_cols(train) 
+
+ranger_final_pred<- ranger_final_pred %>%
+  select(id, .pred, lineapobreza, Pobre)
+
+ranger_final_pred$pobre
+
+ranger_final_pred <- rename(ranger_final_pred, c("ingreso" = ".pred"))
+
+ranger_final_pred$pobre <- ifelse(ranger_final_pred$ingreso > ranger_final_pred$lineapobreza, 0, 1)
+
+ranger_final_pred<- ranger_final_pred %>%
+  select(id, pobre, Pobre)
+
+sqrt(mean((ranger_final_pred$Pobre - ranger_final_pred$pobre)^2))
+
+###Obtener R cuadrado
+r_squared <- cor(ranger_final_pred$pobre, ranger_final_pred$Pobre)^2
+r_squared
+
+###Obtener MAE
+mae <- mae(ranger_final_pred$Pobre, ranger_final_pred$pobre)
+mae
 
 
 ##________________________________________________________________________

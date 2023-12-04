@@ -97,6 +97,16 @@ logit_pred<- logit_pred %>%
 write.table(logit_pred, file = "Logit_class_1.csv", sep = ",", row.names = FALSE, col.names = TRUE)
 
 
+######METRICAS
+#####################
+#####################
+#####################
+
+##Accuracy
+
+
+
+
 #Arbol
 ###############
 set.seed(123)
