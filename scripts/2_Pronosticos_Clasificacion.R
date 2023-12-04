@@ -275,21 +275,27 @@ boost_pred<- boost_pred %>%
   select(id, ...1, Pobre)
 
 boost_pred$pobre<-0
-boost_pred$pobre <- ifelse(boost_pred$...1 > 0.5, 1, 0)
+boost_pred$pobre <- ifelse(boost_pred$...1 == "Si", 1, 0)
+
+boost_pred$Pobre_1<-0
+boost_pred$Pobre_1 <- ifelse(boost_pred$Pobre == "Si", 1, 0)
 
 boost_pred<- boost_pred %>%
-  select(id, pobre, Pobre)
+  select(id, pobre, Pobre_1)
 
-accuracy <- mean(boost_pred$pobre == boost_pred$Pobre)
+accuracy <- mean(boost_pred$pobre == boost_pred$Pobre_1)
 accuracy
 
 ##Recall
-TP <- sum(boost_pred$pobre == 1 & boost_pred$Pobre == 1)
-FN <- sum(boost_pred$pobre == 0 & boost_pred$Pobre == 1)
+TP <- sum(boost_pred$pobre == 1 & boost_pred$Pobre_1 == 1)
+FN <- sum(boost_pred$pobre == 0 & boost_pred$Pobre_1 == 1)
 
 # Calculate Recall
 recall <- TP / (TP + FN)
 recall
+
+
+
 
 
 
